@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Aisea & Kostis Dice Roller</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>Aisea & Kostis 3D Dice Roller</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
@@ -31,34 +30,57 @@
         }
         .subtitle { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
 
-        #canvas-container {
+        #stage-container {
             width: 100%;
             max-width: 380px;
-            height: 290px;
+            height: 280px;
             position: relative;
-            margin: 5px auto;
+            margin: 10px auto;
             border-radius: 20px;
             background: radial-gradient(circle, rgba(30,27,75,0.7) 0%, rgba(15,23,42,0.95) 100%);
             box-shadow: inset 0 0 20px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.5);
             border: 1px solid rgba(255, 255, 255, 0.12);
-            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
             cursor: pointer;
         }
 
-        #dice-overlay-number {
+        .dice-3d {
+            width: 130px;
+            height: 130px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+
+        .dice-face {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 3.2rem;
+            width: 130px;
+            height: 130px;
+            background: rgba(30, 27, 75, 0.95);
+            border: 3px solid #f472b6;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: 0 0 15px #f472b6, 0 0 30px #db2777;
-            pointer-events: none;
-            user-select: none;
-            z-index: 5;
-            transition: opacity 0.2s ease;
+            box-shadow: inset 0 0 15px rgba(244, 114, 182, 0.4), 0 0 12px rgba(0,0,0,0.5);
+            text-shadow: 0 0 10px #f472b6;
+            backface-visibility: hidden;
+            text-align: center;
+            padding: 5px;
         }
+
+        .face-front  { transform: rotateY(0deg) translateZ(65px); }
+        .face-back   { transform: rotateY(180deg) translateZ(65px); }
+        .face-right  { transform: rotateY(90deg) translateZ(65px); }
+        .face-left   { transform: rotateY(-90deg) translateZ(65px); }
+        .face-top    { transform: rotateX(90deg) translateZ(65px); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(65px); }
 
         .controls-panel {
             width: 100%;
@@ -90,7 +112,7 @@
             color: #fff;
             padding: 8px 4px;
             border-radius: 10px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -120,7 +142,7 @@
 
         #result-display {
             text-align: center;
-            min-height: 42px;
+            min-height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -130,7 +152,7 @@
             padding: 4px 10px;
         }
         .result-val {
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             font-weight: 800;
             color: #f472b6;
         }
@@ -140,11 +162,18 @@
 
     <header>
         <h1>🎲 Aisea & Kostis Dice</h1>
-        <div class="subtitle">3D Πολυεδρικά Ζάρια</div>
+        <div class="subtitle">Πλήρη 3D Ζάρια (d4 - d100)</div>
     </header>
 
-    <div id="canvas-container" onclick="rollDice()">
-        <div id="dice-overlay-number">6</div>
+    <div id="stage-container" onclick="rollDice()">
+        <div class="dice-3d" id="dice-3d">
+            <div class="dice-face face-front" id="f-1">1</div>
+            <div class="dice-face face-back" id="f-2">2</div>
+            <div class="dice-face face-right" id="f-3">3</div>
+            <div class="dice-face face-left" id="f-4">4</div>
+            <div class="dice-face face-top" id="f-5">5</div>
+            <div class="dice-face face-bottom" id="f-6">6</div>
+        </div>
     </div>
 
     <div class="controls-panel">
@@ -163,53 +192,101 @@
         </div>
 
         <div id="result-display">
-            <span class="result-val" id="result-text">Πάτα το κουμπί ή κάνε κλικ στο ζάρι!</span>
+            <span class="result-val" id="result-text">Ρίξε το ζάρι για να δεις αποτέλεσμα!</span>
         </div>
 
         <button class="roll-btn" onclick="rollDice()">🎲 ΡΙΞΕ ΤΟ ΖΑΡΙ!</button>
     </div>
 
     <script>
-        let scene, camera, renderer, diceMesh, wireframeMesh;
         let currentSides = 6;
         let isRolling = false;
-        let rollStartTime = 0;
-        let rotSpeed = { x: 0, y: 0, z: 0 };
+        let rotX = -20;
+        let rotY = 25;
 
-        function init3D() {
-            const container = document.getElementById('canvas-container');
+        const dice3d = document.getElementById('dice-3d');
+        updateFaces(6);
+        updateIdleRotation();
 
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.z = 6;
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            container.appendChild(renderer.domElement);
-
-            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambient);
-
-            const dir1 = new THREE.DirectionalLight(0xf472b6, 1.5);
-            dir1.position.set(5, 5, 5);
-            scene.add(dir1);
-
-            const dir2 = new THREE.DirectionalLight(0x60a5fa, 1.2);
-            dir2.position.set(-5, -5, -2);
-            scene.add(dir2);
-
-            buildDice(6);
-            animate();
+        function updateIdleRotation() {
+            if (!isRolling) {
+                rotY += 0.4;
+                dice3d.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+            }
+            requestAnimationFrame(updateIdleRotation);
         }
 
-        function buildDice(sides) {
-            if (diceMesh) scene.remove(diceMesh);
-            if (wireframeMesh) scene.remove(wireframeMesh);
+        function updateFaces(sides) {
+            // Γεμίζουμε τις 6 όψεις του 3D κύβου με τυχαία πιθανά νούμερα από το 1 έως το sides
+            for (let i = 1; i <= 6; i++) {
+                let sampleVal = Math.min(i, sides);
+                if (sides === 100) sampleVal = i * 15 > 100 ? 100 : i * 15;
+                document.getElementById(`f-${i}`).innerText = sampleVal;
+            }
+        }
+
+        function selectDice(sides) {
+            document.querySelectorAll('.dice-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`d${sides}-btn`).classList.add('active');
             currentSides = sides;
 
-            let geom;
-            if (sides === 4) geom = new THREE.TetrahedronGeometry(1.8);
-            else if (sides === 5) geom = new THREE.CylinderGeometry(1.4, 1.4, 2, 5);
-            else if (sides === 6) geom = new THREE.BoxGeometry(2, 2, 2);
-            else if (
+            updateFaces(sides);
+            document.getElementById('result-text').innerText = `Επιλέχθηκε d${sides}. Ρίξε το ζάρι!`;
+        }
+
+        function rollDice() {
+            if (isRolling) return;
+            isRolling = true;
+            document.getElementById('result-text').innerText = "Ρολάρει...";
+
+            let startTime = performance.now();
+            let targetRotX = rotX + 720 + Math.random() * 360;
+            let targetRotY = rotY + 720 + Math.random() * 360;
+
+            function animateRoll(now) {
+                let elapsed = now - startTime;
+                let progress = Math.min(elapsed / 1200, 1);
+                let easeOut = 1 - Math.pow(1 - progress, 3);
+
+                let curX = rotX + (targetRotX - rotX) * easeOut;
+                let curY = rotY + (targetRotY - rotY) * easeOut;
+                dice3d.style.transform = `rotateX(${curX}deg) rotateY(${curY}deg)`;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateRoll);
+                } else {
+                    rotX = curX % 360;
+                    rotY = curY % 360;
+                    isRolling = false;
+                    finishRoll();
+                }
+            }
+            requestAnimationFrame(animateRoll);
+        }
+
+        function finishRoll() {
+            // Παραγωγή ΠΡΑΓΜΑΤΙΚΟΥ τυχαίου αποτελέσματος από 1 έως currentSides
+            let result;
+            if (currentSides === 100) {
+                result = Math.floor(Math.random() * 100) + 1;
+            } else {
+                result = Math.floor(Math.random() * currentSides) + 1;
+            }
+
+            // Ενημέρωση όλων των πλευρών ώστε να περιέχουν έγκυρα νούμερα κοντά στο αποτέλεσμα
+            for (let i = 1; i <= 6; i++) {
+                let val = Math.floor(Math.random() * currentSides) + 1;
+                document.getElementById(`f-${i}`).innerText = val;
+            }
+            // Η μπροστινή πλευρά δείχνει το ακριβές αποτέλεσμα
+            document.getElementById('f-1').innerText = result;
+
+            document.getElementById('result-text').innerText = `Αποτέλεσμα d${currentSides}: ${result}`;
+
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+    </script>
+</body>
+</html>
