@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Aisea & Kostis 3D Dice Roller</title>
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Dice%20Roller%22%2C%22short_name%22%3A%22Dice%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23111827%22%2C%22theme_color%22%3A%22%23ec4899%22%7D">
+    
+    <!-- Three.js & Canvas Confetti -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e1b4b, #31103f);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            overflow-x: hidden;
+            padding: 15px;
+        }
+        header {
+            text-align: center;
+            margin-top: 10px;
+            z-index: 10;
+        }
+        h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(to right, #f472b6, #c084fc, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            text-shadow: 0 2px 10px rgba(244, 114, 182, 0.3);
+        }
+        .subtitle {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        
+        #canvas-container {
+            width: 100%;
+            max-width: 400px;
+            height: 320px;
+            position: relative;
+            margin: 5px auto;
+            border-radius: 20px;
+            background: radial-gradient(circle, rgba(30,27,75,0.6) 0%, rgba(15,23,42,0.9) 100%);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            cursor: pointer;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls-panel {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 10px;
+            z-index: 10;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #cbd5e1;
+            margin-bottom: 3px;
+            font-weight: 700;
+        }
+
+        .dice-types, .modes-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+        }
+        .modes-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 8px 5px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        button.active {
+            background: linear-gradient(135deg, #db2777, #9333ea);
+            border-color: #f472b6;
+            box-shadow: 0 0 12px rgba(219, 39, 119, 0.5);
+        }
+
+        .roll-btn {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6);
+            border: none;
+            color: white;
+            font-size: 1rem;
+            font-weight: 800;
+            padding: 14px;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(236, 72, 153, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.1s ease;
+        }
+        .roll-btn:active {
+            transform: scale(0.96);
+        }
+
+        #result-display {
+            text-align: center;
+            min-height: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .result-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #f472b6;
+        }
+        .cat-badge {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #4c1d95, #831843);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            border: 1px solid #f472b6;
+            margin-top: 2px;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.04); }
+        }
+
+        .sensor-btn {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            font-size: 0.7rem;
+            padding: 6px;
+            border-radius: 8px;
+            color: #93c5fd;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎲 Aisea & Kostis Dice</h1>
+        <div class="subtitle">Magical 3D Decision Maker & Cat Magic</div>
+    </header>
+
+    <div id="canvas-container"></div>
+
+    <div class="controls-panel">
+        <div>
+            <div class="section-title">Σχήμα Ζαριού (Dice Type)</div>
+            <div class="dice-types">
+                <button onclick="setDiceType(4)" id="d4-btn">d4</button>
+                <button onclick="setDiceType(6)" id="d6-btn" class="active">d6</button>
+                <button onclick="setDiceType(8)" id="d8-btn">d8</button>
+                <button onclick="setDiceType(10)" id="d10-btn">d10</button>
+                <button onclick="setDiceType(12)" id="d12-btn">d12</button>
+                <button onclick="setDiceType(20)" id="d20-btn">d20</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="section-title">Mode Επιλογής</div>
+            <div class="modes-grid">
+                <button onclick="setMode('classic')" id="mode-classic" class="active">Κλασικό</button>
+                <button onclick="setMode('food')" id="mode-food">Φαγητό 🍕</button>
+                <button onclick="setMode('who')" id="mode-who">Ποιος πληρώνει; 💳</button>
+            </div>
+        </div>
+
+        <div id="result-display">
+            <span class="result-val" id="result-text">Ρίξε το ζάρι! 🎲</span>
+            <div class="cat-badge" id="cat-badge">
+                <span>🐱🌲</span> <span>Η Missu πληρώνει σε χάδια & Churu!</span> <span>🐾</span>
+            </div>
+        </div>
+
+        <button class="roll-btn" onclick="rollDice()">🎲 ΡΙΞΕ ΤΟ ΖΑΡΙ!</button>
+        <button class="sensor-btn" onclick="initSensors()">📱 Ενεργοποίηση Shake στο Κινητό</button>
+    </div>
+
+    <script>
+        let scene, camera, renderer, diceMesh;
+        let currentSides = 6;
+        let currentMode = 'classic';
+        let isRolling = false;
+        let rollStartTime = 0;
+        let targetRotation = { x: 0, y: 0, z: 0 };
+        let currentRotation = { x: 0, y: 0, z: 0 };
+        let rollVelocity = { x: 0, y: 0, z: 0 };
+        let finalOutcomeText = "";
+
+        const foodOptions = ["Burger 🍔", "Pizza 🍕", "Sushi 🍣", "Souvlaki 🥙", "Pasta 🍝", "Salad 🥗", "Tacos 🌮", "Asian 🍜", "Crepes 🥞", "Bao 🥟"];
+        
+        // Web Audio Sound Synth
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'roll') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'win') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.3);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'meow') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.25);
+                osc.frequency.exponentialRampToValueAtTime(650, now + 0.5);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+        }
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 7;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            createDiceGeometry(6);
+            animate();
+
+            container.addEventListener('click', rollDice);
+        }
+
+        function createDiceGeometry(sides) {
+            if (diceMesh) scene.remove(diceMesh);
+            currentSides = sides;
+
+            let geom;
+            if (sides === 4) geom = new THREE.TetrahedronGeometry(1.8);
+            else if (sides === 6) geom = new THREE.BoxGeometry(2.2, 2.2, 2.2);
+            else if (sides === 8) geom = new THREE.OctahedronGeometry(1.9);
+            else if (sides === 10) geom = new THREE.CylinderGeometry(1.5, 0.1, 2, 5);
+            else if (sides === 12) geom = new THREE.DodecahedronGeometry(1.7);
+            else if (sides === 20) geom = new THREE.IcosahedronGeometry(1.8);
+
+            // Create Canvas Textures for Faces
+            const materials = [];
+            const faceCount = (sides === 10) ? 10 : sides;
+            for (let i = 1; i <= faceCount; i++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.fillStyle = '#1e1b4b';
+                ctx.fillRect(0, 0, 128, 128);
+                
+                ctx.strokeStyle = '#f472b6';
+                ctx.lineWidth = 8;
+                ctx.strokeRect(6, 6, 116, 116);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 50px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                let label = i.toString();
+                if (currentMode === 'who') {
+                    label = (i === 1) ? '🐾' : '💳';
+                } else if (currentMode === 'food' && sides === 6) {
+                    label = ['🍔','🍕','🍣','🥙','🍝','🥗'][i-1];
+                }
+                ctx.fillText(label, 64, 64);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                materials.push(new THREE.MeshStandardMaterial({ map: texture, roughness: 0.3 }));
+            }
+
+            diceMesh = new THREE.Mesh(geom, (sides === 6) ? materials : new THREE.MeshStandardMaterial({color: 0xdb2777, roughness: 0.2, metalness: 0.3}));
+            scene.add(diceMesh);
+        }
+
+        function setDiceType(sides) {
+            document.querySelectorAll('.dice-types button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`d${sides}-btn`).classList.add('active');
+            createDiceGeometry(sides);
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.modes-grid button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`mode-${mode}`).classList.add('active');
+            createDiceGeometry(currentSides);
+        }
+
+        function rollDice() {
+            if (isRolling) return;
+            isRolling = true;
+            rollStartTime = performance.now();
+            playSound('roll');
+
+            document.getElementById('cat-badge').style.display = 'none';
+            document.getElementById('result-textinnerText = "Ρολάρει..."';
+
+            rollVelocity = {
+                x: (Math.random() - 0.5) * 0.4 + 0.3,
+                y: (Math.random() - 0.5) * 0.4 + 0.3,
+                z: (Math.random() - 0.5) * 0.4
+            };
+
+            targetRotation.x += (Math.random() * 4 + 4) * Math.PI;
+            targetRotation.y += (Math.random() * 4 + 4) * Math.PI;
+            targetRotation.z += (Math.random() * 4 + 4) * Math.PI;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isRolling) {
+                const elapsed = performance.now() - rollStartTime;
+                currentRotation.x += rollVelocity.x;
+                currentRotation.y += rollVelocity.y;
+                currentRotation.z += rollVelocity.z;
+                
+                diceMesh.rotation.x = currentRotation.x;
+                diceMesh.rotation.y = currentRotation.y;
+                diceMesh.rotation.z = currentRotation.z;
+
+                if (elapsed > 1600) {
+                    isRolling = false;
+                    determineOutcome();
+                }
+            } else {
+                diceMesh.rotation.y += 0.005;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function determineOutcome() {
+            playSound('win');
+            confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+
+            const resText = document.getElementById('result-text');
+            const catBadge = document.getElementById('cat-badge');
+
+            if (currentMode === 'who') {
+                // Rigged: 1 face Missu, others Kostis
+                const isMissu = Math.random() < (1 / currentSides);
+                if (isMissu) {
+                    playSound('meow');
+                    resText.innerText = "Η Missu αποφάσισε!";
+                    catBadge.style.display = 'flex';
+                } else {
+                    resText.innerText = "Ο Κωστής πληρώνει! 💳";
+                }
+            } else if (currentMode === 'food') {
+                const idx = Math.floor(Math.random() * foodOptions.length);
+                resText.innerText = `Επιλογή: ${foodOptions[idx]}`;
+            } else {
+                const val = Math.floor(Math.random() * currentSides) + 1;
+                resText.innerText = `Αποτέλεσμα: ${val}`;
+            }
+        }
+
+        // Shake detection setup
+        function initSensors() {
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission().then(response => {
+                    if (response === 'granted') {
+                        setupShakeListener();
+                        alert("Shake ενεργοποιήθηκε επιτυχώς!");
+                    }
+                }).catch(console.error);
+            } else {
+                setupShakeListener();
+                alert("Το Shake είναι έτοιμο!");
+            }
+        }
+
+        function setupShakeListener() {
+            let lastX = 0, lastY = 0, lastZ = 0;
+            window.addEventListener('devicemotion', (e) => {
+                let acc = e.accelerationIncludingGravity;
+                if (!acc) return;
+                let deltaX = Math.abs(acc.x - lastX);
+                let deltaY = Math.abs(acc.y - lastY);
+                let deltaZ = Math.abs(acc.z - lastZ);
+                if ((deltaX + deltaY + deltaZ) > 15) {
+                    rollDice();
+                }
+                lastX = acc.x; lastY = acc.y; lastZ = acc.z;
+            });
+        }
+
+        window.onload = init3D;
+    </script>
+</body>
+</html>
