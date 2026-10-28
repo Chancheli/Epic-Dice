@@ -111,4 +111,86 @@
             justify-content: center;
             background: rgba(15, 23, 42, 0.7);
             border-radius: 12px;
-            border: 1px solid rgba
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+        }
+        .result-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #f472b6;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎲 Aisea & Kostis Dice</h1>
+        <div class="subtitle">3D Πολυεδρικά Ζάρια</div>
+    </header>
+
+    <div id="canvas-container" onclick="rollDice()"></div>
+
+    <div class="controls-panel">
+        <div>
+            <div class="section-title">Επιλογή Ζαριού</div>
+            <div class="dice-types">
+                <button onclick="selectDice(4)" id="d4-btn" class="dice-btn">d4</button>
+                <button onclick="selectDice(6)" id="d6-btn" class="dice-btn active">d6</button>
+                <button onclick="selectDice(8)" id="d8-btn" class="dice-btn">d8</button>
+                <button onclick="selectDice(10)" id="d10-btn" class="dice-btn">d10</button>
+                <button onclick="selectDice(12)" id="d12-btn" class="dice-btn">d12</button>
+                <button onclick="selectDice(20)" id="d20-btn" class="dice-btn">d20</button>
+                <button onclick="selectDice(100)" id="d100-btn" class="dice-btn">d100</button>
+            </div>
+        </div>
+
+        <div id="result-display">
+            <span class="result-val" id="result-text">Ρίξε το ζάρι!</span>
+        </div>
+
+        <button class="roll-btn" onclick="rollDice()">🎲 ΡΙΞΕ ΤΟ ΖΑΡΙ!</button>
+    </div>
+
+    <script>
+        let scene, camera, renderer, diceMesh;
+        let currentSides = 6;
+        let isRolling = false;
+        let rollStartTime = 0;
+        let rotSpeed = { x: 0, y: 0, z: 0 };
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            container.innerHTML = '';
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 6.5;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(5, 5, 5);
+            scene.add(dirLight);
+
+            buildDiceGeometry(6);
+            animate();
+        }
+
+        function createTextTexture(text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#1e1b4b';
+            ctx.fillRect(0, 0, 256, 256);
+            
+            ctx.strokeStyle = '#f472b6';
+            ctx.lineWidth = 14;
+            ctx.strokeRect(12, 12, 232, 232);
+
+            ctx.fillStyle = '#ffffff
