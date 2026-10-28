@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Aisea & Kostis 3D Dice & Decision Maker</title>
+    <title>Aisea & Kostis Decision Dice</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
@@ -100,14 +100,16 @@
             font-weight: 700;
         }
 
-        .dice-types, .modes-grid {
+        .dice-types {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 5px;
         }
 
         .modes-grid {
+            display: grid;
             grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
         }
 
         button.tool-btn {
@@ -160,14 +162,16 @@
             font-weight: 800;
             color: #f472b6;
             line-height: 1.3;
+            text-align: center;
+            width: 100%;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🎲 Aisea & Kostis Decision Hub</h1>
-        <div class="subtitle">Ζάρια & Αποφάσεις για δύο!</div>
+        <h1>🎲 Aisea & Kostis Decision Dice</h1>
+        <div class="subtitle">Γιατι μόνοι μας, είμαστε άχρηστοι</div>
     </header>
 
     <div id="stage-container" onclick="rollAction()">
@@ -186,8 +190,11 @@
             <div class="section-title">Κλασικά Ζάρια</div>
             <div class="dice-types">
                 <button onclick="selectDice(4)" id="d4-btn" class="tool-btn">d4</button>
+                <button onclick="selectDice(5)" id="d5-btn" class="tool-btn">d5</button>
                 <button onclick="selectDice(6)" id="d6-btn" class="tool-btn active">d6</button>
+                <button onclick="selectDice(8)" id="d8-btn" class="tool-btn">d8</button>
                 <button onclick="selectDice(10)" id="d10-btn" class="tool-btn">d10</button>
+                <button onclick="selectDice(12)" id="d12-btn" class="tool-btn">d12</button>
                 <button onclick="selectDice(20)" id="d20-btn" class="tool-btn">d20</button>
                 <button onclick="selectDice(100)" id="d100-btn" class="tool-btn">d100</button>
             </div>
@@ -205,21 +212,29 @@
         </div>
 
         <div id="result-display">
-            <span class="result-val" id="result-text">Διάλεξε ζάρι ή mode και πάτα ρίψη!</span>
+            <span class="result-val" id="result-text">Δώστο!</span>
         </div>
 
-        <button class="roll-btn" onclick="rollAction()">🎲 ΡΙΞΕ ΤΟ / ΑΠΟΦΑΣΙΣΕ!</button>
+        <button class="roll-btn" onclick="rollAction()">🎲 Δώστο!!</button>
     </div>
 
     <script>
-        let currentType = 'dice'; // 'dice' ή 'mode'
-        let currentValue = 6;     // Αριθμός πλευρών ή όνομα mode
+        let currentType = 'dice';
+        let currentValue = 6;
         let isRolling = false;
         let rotX = -20;
         let rotY = 25;
 
         const dice3d = document.getElementById('dice-3d');
         updateIdleRotation();
+
+        const modeIcons = {
+            who: "👤",
+            cookOrOrder: "🍳",
+            cooking: "🍲",
+            ordering: "🍕",
+            activity: "🎬"
+        };
 
         const modesData = {
             who: ["Κωστής", "Αϊσέα"],
@@ -261,7 +276,7 @@
             currentType = 'mode';
             currentValue = modeKey;
             document.getElementById('result-text').innerText = `Επιλέχθηκε κατηγορία! Πάτα ρίψη.`;
-            document.getElementById('f-1').innerText = '✨';
+            document.getElementById('f-1').innerText = modeIcons[modeKey] || '✨';
         }
 
         function rollAction() {
@@ -299,13 +314,13 @@
 
             if (currentType === 'dice') {
                 let res = Math.floor(Math.random() * currentValue) + 1;
-                finalResultText = `Αποτελέσμα d${currentValue}: ${res}`;
+                finalResultText = `Αποτέλεσμα d${currentValue}: ${res}`;
                 document.getElementById('f-1').innerText = res;
             } else {
                 let options = modesData[currentValue];
                 let chosen = options[Math.floor(Math.random() * options.length)];
                 finalResultText = `✨ Απόφαση: ${chosen}`;
-                document.getElementById('f-1').innerText = '🎉';
+                document.getElementById('f-1').innerText = modeIcons[currentValue] || '✨';
             }
 
             document.getElementById('result-text').innerText = finalResultText;
