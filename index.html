@@ -4,310 +4,160 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Aisea & Kostis 3D Dice Roller</title>
-    <!-- PWA & Mobile Meta Tags -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Dice%20Roller%22%2C%22short_name%22%3A%22Dice%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23111827%22%2C%22theme_color%22%3A%22%23ec4899%22%7D">
-    
-    <!-- Three.js & Canvas Confetti -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: linear-gradient(135deg, #0f172a, #1e1b4b, #31103f);
             color: #f8fafc;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            overflow-x: hidden;
-            padding: 15px;
+            justify-content: center;
+            padding: 20px;
         }
-        header {
-            text-align: center;
-            margin-top: 10px;
-            z-index: 10;
-        }
-        h1 {
-            font-size: 1.5rem;
-            background: linear-gradient(to right, #f472b6, #c084fc, #60a5fa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 800;
-            text-shadow: 0 2px 10px rgba(244, 114, 182, 0.3);
-        }
-        .subtitle {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
-        
+        h1 { font-size: 1.5rem; color: #f472b6; margin-bottom: 5px; text-align: center; }
+        .subtitle { font-size: 0.8rem; color: #94a3b8; margin-bottom: 15px; text-align: center; }
         #canvas-container {
             width: 100%;
-            max-width: 400px;
-            height: 320px;
-            position: relative;
-            margin: 5px auto;
+            max-width: 350px;
+            height: 300px;
             border-radius: 20px;
-            background: radial-gradient(circle, rgba(30,27,75,0.6) 0%, rgba(15,23,42,0.9) 100%);
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.4);
+            background: rgba(15, 23, 42, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            overflow: hidden;
+            margin-bottom: 15px;
             cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        .controls-panel {
-            width: 100%;
-            max-width: 400px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 10px;
-            z-index: 10;
-        }
-
-        .section-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #cbd5e1;
-            margin-bottom: 3px;
-            font-weight: 700;
-        }
-
-        .dice-types, .modes-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 5px;
-        }
-        .modes-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        button {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #fff;
-            padding: 8px 5px;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: center;
-        }
-        button:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-1px);
-        }
-        button.active {
-            background: linear-gradient(135deg, #db2777, #9333ea);
-            border-color: #f472b6;
-            box-shadow: 0 0 12px rgba(219, 39, 119, 0.5);
-        }
-
         .roll-btn {
-            background: linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6);
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
             border: none;
             color: white;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 800;
-            padding: 14px;
+            padding: 15px 30px;
             border-radius: 14px;
             cursor: pointer;
             box-shadow: 0 4px 20px rgba(236, 72, 153, 0.4);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: transform 0.1s ease;
         }
-        .roll-btn:active {
-            transform: scale(0.96);
-        }
-
-        #result-display {
-            text-align: center;
-            min-height: 45px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 5px;
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .result-val {
-            font-size: 1.1rem;
-            font-weight: 800;
+        #result {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
             color: #f472b6;
-        }
-        .cat-badge {
-            display: none;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, #4c1d95, #831843);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            border: 1px solid #f472b6;
-            margin-top: 2px;
-            animation: pulse 1s infinite alternate;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.04); }
-        }
-
-        .sensor-btn {
-            background: rgba(59, 130, 246, 0.2);
-            border: 1px solid rgba(59, 130, 246, 0.4);
-            font-size: 0.7rem;
-            padding: 6px;
-            border-radius: 8px;
-            color: #93c5fd;
+            min-height: 30px;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>🎲 Aisea & Kostis Dice</h1>
-        <div class="subtitle">Magical 3D Decision Maker & Cat Magic</div>
-    </header>
+    <h1>🎲 Aisea & Kostis Dice</h1>
+    <div class="subtitle">Magical 3D Decision Maker</div>
 
-    <div id="canvas-container"></div>
+    <div id="canvas-container" onclick="rollDice()"></div>
 
-    <div class="controls-panel">
-        <div>
-            <div class="section-title">Σχήμα Ζαριού (Dice Type)</div>
-            <div class="dice-types">
-                <button onclick="setDiceType(4)" id="d4-btn">d4</button>
-                <button onclick="setDiceType(6)" id="d6-btn" class="active">d6</button>
-                <button onclick="setDiceType(8)" id="d8-btn">d8</button>
-                <button onclick="setDiceType(10)" id="d10-btn">d10</button>
-                <button onclick="setDiceType(12)" id="d12-btn">d12</button>
-                <button onclick="setDiceType(20)" id="d20-btn">d20</button>
-            </div>
-        </div>
-
-        <div>
-            <div class="section-title">Mode Επιλογής</div>
-            <div class="modes-grid">
-                <button onclick="setMode('classic')" id="mode-classic" class="active">Κλασικό</button>
-                <button onclick="setMode('food')" id="mode-food">Φαγητό 🍕</button>
-                <button onclick="setMode('who')" id="mode-who">Ποιος πληρώνει; 💳</button>
-            </div>
-        </div>
-
-        <div id="result-display">
-            <span class="result-val" id="result-text">Ρίξε το ζάρι! 🎲</span>
-            <div class="cat-badge" id="cat-badge">
-                <span>🐱🌲</span> <span>Η Missu πληρώνει σε χάδια & Churu!</span> <span>🐾</span>
-            </div>
-        </div>
-
-        <button class="roll-btn" onclick="rollDice()">🎲 ΡΙΞΕ ΤΟ ΖΑΡΙ!</button>
-        <button class="sensor-btn" onclick="initSensors()">📱 Ενεργοποίηση Shake στο Κινητό</button>
-    </div>
+    <button class="roll-btn" onclick="rollDice()">🎲 ΡΙΞΕ ΤΟ ΖΑΡΙ!</button>
+    <div id="result">Pikse to zari!</div>
 
     <script>
-        let scene, camera, renderer, diceMesh;
-        let currentSides = 6;
-        let currentMode = 'classic';
+        let scene, camera, renderer, cube;
         let isRolling = false;
-        let rollStartTime = 0;
-        let currentRotation = { x: 0, y: 0, z: 0 };
-        let rollVelocity = { x: 0, y: 0, z: 0 };
 
-        const foodOptions = ["Burger 🍔", "Pizza 🍕", "Sushi 🍣", "Souvlaki 🥙", "Pasta 🍝", "Salad 🥗", "Tacos 🌮", "Asian 🍜", "Crepes 🥞", "Bao 🥟"];
-        
-        // Web Audio Sound Synth
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(type) {
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                const now = audioCtx.currentTime;
-
-                if (type === 'roll') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-                    osc.start(now);
-                    osc.stop(now + 0.15);
-                } else if (type === 'win') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(300, now);
-                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.3);
-                    gain.gain.setValueAtTime(0.25, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
-                } else if (type === 'meow') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(500, now);
-                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.25);
-                    osc.frequency.exponentialRampToValueAtTime(650, now + 0.5);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                    osc.start(now);
-                    osc.stop(now + 0.5);
-                }
-            } catch(e) {}
-        }
-
-        function init3D() {
+        function init() {
             const container = document.getElementById('canvas-container');
-            container.innerHTML = ''; // καθαρισμός αν υπάρχει παλιό canvas
-
+            
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.z = 7;
+            camera.position.z = 6;
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-            scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-            directionalLight.position.set(5, 5, 5);
-            scene.add(directionalLight);
+            const light = new THREE.DirectionalLight(0xffffff, 1.5);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 
-            createDiceGeometry(6);
+            const geometry = new THREE.BoxGeometry(2, 2, 2);
+            const materials = [
+                createFaceMat('1'),
+                createFaceMat('2'),
+                createFaceMat('3'),
+                createFaceMat('4'),
+                createFaceMat('5'),
+                createFaceMat('6')
+            ];
+
+            cube = new THREE.Mesh(geometry, materials);
+            scene.add(cube);
+
             animate();
-
-            container.addEventListener('click', rollDice);
         }
 
-        function createDiceGeometry(sides) {
-            if (diceMesh) scene.remove(diceMesh);
-            currentSides = sides;
+        function createFaceMat(text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#1e1b4b';
+            ctx.fillRect(0, 0, 128, 128);
+            ctx.strokeStyle = '#f472b6';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(5, 5, 118, 118);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 60px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 64, 64);
 
-            let geom;
-            if (sides === 4) geom = new THREE.TetrahedronGeometry(1.8);
-            else if (sides === 6) geom = new THREE.BoxGeometry(2.2, 2.2, 2.2);
-            else if (sides === 8) geom = new THREE.OctahedronGeometry(1.9);
-            else if (sides === 10) geom = new THREE.CylinderGeometry(1.5, 0.1, 2, 5);
-            else if (sides === 12) geom = new THREE.DodecahedronGeometry(1.7);
+            return new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!isRolling && cube) {
+                cube.rotation.x += 0.005;
+                cube.rotation.y += 0.008;
+            }
+            renderer.render(scene, camera);
+        }
+
+        function rollDice() {
+            if (isRolling || !cube) return;
+            isRolling = true;
+            document.getElementById('result').innerText = "Rolarei...";
+
+            let start = performance.now();
+            let randomX = cube.rotation.x + Math.PI * 4 + Math.random() * 5;
+            let randomY = cube.rotation.y + Math.PI * 4 + Math.random() * 5;
+
+            function spin(time) {
+                let elapsed = time - start;
+                let progress = Math.min(elapsed / 1200, 1);
+                
+                cube.rotation.x += (randomX - cube.rotation.x) * 0.1;
+                cube.rotation.y += (randomY - cube.rotation.y) * 0.1;
+
+                if (progress < 1) {
+                    requestAnimationFrame(spin);
+                } else {
+                    isRolling = false;
+                    let res = Math.floor(Math.random() * 6) + 1;
+                    document.getElementById('result').innerText = "Apotelesma: " + res;
+                    if (typeof confetti === 'function') {
+                        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+                    }
+                }
+            }
+            requestAnimationFrame(spin);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
