@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Aisea & Kostis 3D Dice Roller</title>
+    <title>Aisea & Kostis 3D Dice & Decision Maker</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
@@ -22,20 +22,20 @@
         }
         header { text-align: center; margin-top: 5px; }
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             background: linear-gradient(to right, #f472b6, #c084fc, #60a5fa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 800;
         }
-        .subtitle { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
+        .subtitle { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
 
         #stage-container {
             width: 100%;
             max-width: 380px;
-            height: 280px;
+            height: 220px;
             position: relative;
-            margin: 10px auto;
+            margin: 8px auto;
             border-radius: 20px;
             background: radial-gradient(circle, rgba(30,27,75,0.7) 0%, rgba(15,23,42,0.95) 100%);
             box-shadow: inset 0 0 20px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.5);
@@ -48,8 +48,8 @@
         }
 
         .dice-3d {
-            width: 130px;
-            height: 130px;
+            width: 110px;
+            height: 110px;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.1s ease-out;
@@ -57,15 +57,15 @@
 
         .dice-face {
             position: absolute;
-            width: 130px;
-            height: 130px;
+            width: 110px;
+            height: 110px;
             background: rgba(30, 27, 75, 0.95);
             border: 3px solid #f472b6;
-            border-radius: 18px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             font-weight: 900;
             color: #ffffff;
             box-shadow: inset 0 0 15px rgba(244, 114, 182, 0.4), 0 0 12px rgba(0,0,0,0.5);
@@ -75,51 +75,55 @@
             padding: 5px;
         }
 
-        .face-front  { transform: rotateY(0deg) translateZ(65px); }
-        .face-back   { transform: rotateY(180deg) translateZ(65px); }
-        .face-right  { transform: rotateY(90deg) translateZ(65px); }
-        .face-left   { transform: rotateY(-90deg) translateZ(65px); }
-        .face-top    { transform: rotateX(90deg) translateZ(65px); }
-        .face-bottom { transform: rotateX(-90deg) translateZ(65px); }
+        .face-front  { transform: rotateY(0deg) translateZ(55px); }
+        .face-back   { transform: rotateY(180deg) translateZ(55px); }
+        .face-right  { transform: rotateY(90deg) translateZ(55px); }
+        .face-left   { transform: rotateY(-90deg) translateZ(55px); }
+        .face-top    { transform: rotateX(90deg) translateZ(55px); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(55px); }
 
         .controls-panel {
             width: 100%;
             max-width: 380px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 5px;
         }
 
         .section-title {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #cbd5e1;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             font-weight: 700;
         }
 
-        .dice-types {
+        .dice-types, .modes-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
+            gap: 5px;
         }
 
-        button.dice-btn {
+        .modes-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        button.tool-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.18);
             color: #fff;
-            padding: 8px 4px;
+            padding: 7px 4px;
             border-radius: 10px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
             text-align: center;
         }
-        button.dice-btn:hover { background: rgba(255, 255, 255, 0.18); }
-        button.dice-btn.active {
+        button.tool-btn:hover { background: rgba(255, 255, 255, 0.18); }
+        button.tool-btn.active {
             background: linear-gradient(135deg, #db2777, #9333ea);
             border-color: #f472b6;
             box-shadow: 0 0 10px rgba(219, 39, 119, 0.6);
@@ -129,9 +133,9 @@
             background: linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6);
             border: none;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 800;
-            padding: 13px;
+            padding: 12px;
             border-radius: 14px;
             cursor: pointer;
             box-shadow: 0 4px 20px rgba(236, 72, 153, 0.4);
@@ -142,71 +146,97 @@
 
         #result-display {
             text-align: center;
-            min-height: 45px;
+            min-height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(15, 23, 42, 0.7);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 4px 10px;
+            padding: 6px 12px;
         }
         .result-val {
-            font-size: 1.15rem;
+            font-size: 1rem;
             font-weight: 800;
             color: #f472b6;
+            line-height: 1.3;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🎲 Aisea & Kostis Dice</h1>
-        <div class="subtitle">Πλήρη 3D Ζάρια (d4 - d100)</div>
+        <h1>🎲 Aisea & Kostis Decision Hub</h1>
+        <div class="subtitle">Ζάρια & Αποφάσεις για δύο!</div>
     </header>
 
-    <div id="stage-container" onclick="rollDice()">
+    <div id="stage-container" onclick="rollAction()">
         <div class="dice-3d" id="dice-3d">
-            <div class="dice-face face-front" id="f-1">1</div>
-            <div class="dice-face face-back" id="f-2">2</div>
-            <div class="dice-face face-right" id="f-3">3</div>
-            <div class="dice-face face-left" id="f-4">4</div>
-            <div class="dice-face face-top" id="f-5">5</div>
-            <div class="dice-face face-bottom" id="f-6">6</div>
+            <div class="dice-face face-front" id="f-1">🎲</div>
+            <div class="dice-face face-back" id="f-2">A&K</div>
+            <div class="dice-face face-right" id="f-3">❤️</div>
+            <div class="dice-face face-left" id="f-4">🍕</div>
+            <div class="dice-face face-top" id="f-5">🐱</div>
+            <div class="dice-face face-bottom" id="f-6">✨</div>
         </div>
     </div>
 
     <div class="controls-panel">
         <div>
-            <div class="section-title">Επιλογή Ζαριού</div>
+            <div class="section-title">Κλασικά Ζάρια</div>
             <div class="dice-types">
-                <button onclick="selectDice(4)" id="d4-btn" class="dice-btn">d4</button>
-                <button onclick="selectDice(5)" id="d5-btn" class="dice-btn">d5</button>
-                <button onclick="selectDice(6)" id="d6-btn" class="dice-btn active">d6</button>
-                <button onclick="selectDice(8)" id="d8-btn" class="dice-btn">d8</button>
-                <button onclick="selectDice(10)" id="d10-btn" class="dice-btn">d10</button>
-                <button onclick="selectDice(12)" id="d12-btn" class="dice-btn">d12</button>
-                <button onclick="selectDice(20)" id="d20-btn" class="dice-btn">d20</button>
-                <button onclick="selectDice(100)" id="d100-btn" class="dice-btn">d100</button>
+                <button onclick="selectDice(4)" id="d4-btn" class="tool-btn">d4</button>
+                <button onclick="selectDice(6)" id="d6-btn" class="tool-btn active">d6</button>
+                <button onclick="selectDice(10)" id="d10-btn" class="tool-btn">d10</button>
+                <button onclick="selectDice(20)" id="d20-btn" class="tool-btn">d20</button>
+                <button onclick="selectDice(100)" id="d100-btn" class="tool-btn">d100</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="section-title">Modes Αποφάσεων</div>
+            <div class="modes-grid">
+                <button onclick="selectMode('who')" id="mode-who-btn" class="tool-btn">1. Ποιος αποφασίζει;</button>
+                <button onclick="selectMode('cookOrOrder')" id="mode-cookOrOrder-btn" class="tool-btn">2. Μαγείρεμα / Delivery</button>
+                <button onclick="selectMode('cooking')" id="mode-cooking-btn" class="tool-btn">3. Τι μαγειρεύουμε;</button>
+                <button onclick="selectMode('ordering')" id="mode-ordering-btn" class="tool-btn">4. Τι παραγγέλνουμε;</button>
+                <button onclick="selectMode('activity')" id="mode-activity-btn" class="tool-btn" style="grid-column: span 2;">5. Τι κάνουμε σήμερα;</button>
             </div>
         </div>
 
         <div id="result-display">
-            <span class="result-val" id="result-text">Ρίξε το ζάρι για να δεις αποτέλεσμα!</span>
+            <span class="result-val" id="result-text">Διάλεξε ζάρι ή mode και πάτα ρίψη!</span>
         </div>
 
-        <button class="roll-btn" onclick="rollDice()">🎲 ΡΙΞΕ ΤΟ ΖΑΡΙ!</button>
+        <button class="roll-btn" onclick="rollAction()">🎲 ΡΙΞΕ ΤΟ / ΑΠΟΦΑΣΙΣΕ!</button>
     </div>
 
     <script>
-        let currentSides = 6;
+        let currentType = 'dice'; // 'dice' ή 'mode'
+        let currentValue = 6;     // Αριθμός πλευρών ή όνομα mode
         let isRolling = false;
         let rotX = -20;
         let rotY = 25;
 
         const dice3d = document.getElementById('dice-3d');
-        updateFaces(6);
         updateIdleRotation();
+
+        const modesData = {
+            who: ["Κωστής", "Αϊσέα"],
+            cookOrOrder: ["Μαγειρεύουμε", "Παραγγέλνουμεεεεεεε!!!!"],
+            cooking: [
+                "Γιουβέτσι κοτόπουλο", "Κοτόπουλο με ρύζι στο φούρνο", "Κοτόπουλο με σοτέ λαχανικά",
+                "Μπιφτέκια με ό,τι βρεις", "Φιλέτο στήθος κοτόπουλο με πέστο βασιλικού",
+                "Πανσετάκια με γλυκοκαυτερή σάλτσα μουστάρδας και λεμονιού", "Μπιφτέκια γαλοπούλας με sour cream & πατάτες",
+                "Κοτόπουλο με ζυμαρικά σε σάλτσα ντομάτα-παρμεζάνα", "Γεμιστές πιπεριές στην κατσαρόλα με κρέμα φέτας",
+                "Μακαρονόπιτα σουφλέ", "Ταϊλανδέζικο κοτόπουλο με κόκκινο κάρυ", "Μακαρόνια με τυριά στο φούρνο",
+                "Burger", "Μακαρόνια με κιμά", "Μακαρόνια με Τόνο", "Fishsticks",
+                "Κεφτεδάκια Ikea. Δεν έχεις??? ε ξαναρίξε ζάρι, τι με κοιτάς?!", "Chicken nuggets με πουρέ",
+                "Παπουτσάκια με κιμά και ρύζι"
+            ],
+            ordering: ["Pizza", "Sushi", "Mac", "KFC", "Burger", "Σουβλάκι"],
+            activity: ["Επιτραπέζιο", "Κονσόλα", "Σειρά", "Ταινία", "Βόλτα", "Σινεμά", "Φαγητό έξω"]
+        };
 
         function updateIdleRotation() {
             if (!isRolling) {
@@ -216,28 +246,28 @@
             requestAnimationFrame(updateIdleRotation);
         }
 
-        function updateFaces(sides) {
-            // Γεμίζουμε τις 6 όψεις του 3D κύβου με τυχαία πιθανά νούμερα από το 1 έως το sides
-            for (let i = 1; i <= 6; i++) {
-                let sampleVal = Math.min(i, sides);
-                if (sides === 100) sampleVal = i * 15 > 100 ? 100 : i * 15;
-                document.getElementById(`f-${i}`).innerText = sampleVal;
-            }
-        }
-
         function selectDice(sides) {
-            document.querySelectorAll('.dice-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`d${sides}-btn`).classList.add('active');
-            currentSides = sides;
-
-            updateFaces(sides);
-            document.getElementById('result-text').innerText = `Επιλέχθηκε d${sides}. Ρίξε το ζάρι!`;
+            currentType = 'dice';
+            currentValue = sides;
+            document.getElementById('result-text').innerText = `Επιλέχθηκε d${sides}. Έτοιμο για ρίψη!`;
+            document.getElementById('f-1').innerText = `d${sides}`;
         }
 
-        function rollDice() {
+        function selectMode(modeKey) {
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`mode-${modeKey}-btn`).classList.add('active');
+            currentType = 'mode';
+            currentValue = modeKey;
+            document.getElementById('result-text').innerText = `Επιλέχθηκε κατηγορία! Πάτα ρίψη.`;
+            document.getElementById('f-1').innerText = '✨';
+        }
+
+        function rollAction() {
             if (isRolling) return;
             isRolling = true;
-            document.getElementById('result-text').innerText = "Ρολάρει...";
+            document.getElementById('result-text').innerText = "Αποφασίζει...";
 
             let startTime = performance.now();
             let targetRotX = rotX + 720 + Math.random() * 360;
@@ -265,26 +295,23 @@
         }
 
         function finishRoll() {
-            // Παραγωγή ΠΡΑΓΜΑΤΙΚΟΥ τυχαίου αποτελέσματος από 1 έως currentSides
-            let result;
-            if (currentSides === 100) {
-                result = Math.floor(Math.random() * 100) + 1;
+            let finalResultText = "";
+
+            if (currentType === 'dice') {
+                let res = Math.floor(Math.random() * currentValue) + 1;
+                finalResultText = `Αποτελέσμα d${currentValue}: ${res}`;
+                document.getElementById('f-1').innerText = res;
             } else {
-                result = Math.floor(Math.random() * currentSides) + 1;
+                let options = modesData[currentValue];
+                let chosen = options[Math.floor(Math.random() * options.length)];
+                finalResultText = `✨ Απόφαση: ${chosen}`;
+                document.getElementById('f-1').innerText = '🎉';
             }
 
-            // Ενημέρωση όλων των πλευρών ώστε να περιέχουν έγκυρα νούμερα κοντά στο αποτέλεσμα
-            for (let i = 1; i <= 6; i++) {
-                let val = Math.floor(Math.random() * currentSides) + 1;
-                document.getElementById(`f-${i}`).innerText = val;
-            }
-            // Η μπροστινή πλευρά δείχνει το ακριβές αποτέλεσμα
-            document.getElementById('f-1').innerText = result;
-
-            document.getElementById('result-text').innerText = `Αποτέλεσμα d${currentSides}: ${result}`;
+            document.getElementById('result-text').innerText = finalResultText;
 
             if (typeof confetti === 'function') {
-                confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+                confetti({ particleCount: 80, spread: 90, origin: { y: 0.6 } });
             }
         }
     </script>
